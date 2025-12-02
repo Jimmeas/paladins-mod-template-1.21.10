@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "paladinsmod",
+	"version": "${version}",
+	"name": "Paladins Mod",
+	"description": "Paladins mod for Minecraft by Jimmeas",
+	"authors": [
+		"Jimmeas"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/paladinsmod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.jimmeas.paladinsmod.PaladinsMod"
+		],
+		"fabric-datagen": [
+			"com.jimmeas.paladinsmod.PaladinsModDataGenerator"
+		],
+      "client": [
+        "com.jimmeas.paladinsmod.paladinsmodclient"
+      ]
+	},
+	"mixins": [
+		"paladinsmod.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.1",
+		"minecraft": "~1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
