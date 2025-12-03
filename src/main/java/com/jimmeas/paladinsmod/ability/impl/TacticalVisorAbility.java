@@ -29,19 +29,19 @@ public class TacticalVisorAbility extends Ability {
         activeTicks = DURATION_TICKS;
 
         // Play activation sound
-        player.getWorld().playSound(
+        player.level().playSound(
                 null,
                 player.getX(),
                 player.getY(),
                 player.getZ(),
-                SoundEvents.BLOCK_BEACON_ACTIVATE,
+                SoundEvents.BEACON_ACTIVATE,
                 SoundSource.PLAYERS,
                 1.0F,
                 1.5F
         );
 
         // Give glowing effect to see enemies through walls
-        player.addStatusEffect(new MobEffectInstance(
+        player.addEffect(new MobEffectInstance(
                 MobEffects.NIGHT_VISION,
                 DURATION_TICKS,
                 0,
@@ -64,24 +64,26 @@ public class TacticalVisorAbility extends Ability {
         }
 
         // Mark nearby enemies with glowing effect
-        AABB searchAABB = AABB.of(
-                player.getPos(),
-                DETECTION_RANGE * 2,
-                DETECTION_RANGE * 2,
-                DETECTION_RANGE * 2
+        AABB searchBox = new AABB(
+                player.getX() - DETECTION_RANGE,
+                player.getY() - DETECTION_RANGE,
+                player.getZ() - DETECTION_RANGE,
+                player.getX() + DETECTION_RANGE,
+                player.getY() + DETECTION_RANGE,
+                player.getZ() + DETECTION_RANGE
         );
 
-        List<LivingEntity> nearbyEntities = player.getWorld()
-                .getEntitiesByClass(LivingEntity.class, searchAABB, entity -> {
+        List<LivingEntity> nearbyEntities = player.level()
+                .getEntitiesOfClass(LivingEntity.class, searchBox, entity -> {
                     return entity != player &&
                             entity.isAlive() &&
-                            !entity.isTeammate(player) &&
+                            !entity.isAlliedTo(player) &&
                             entity.distanceTo(player) <= DETECTION_RANGE;
                 });
 
         // Apply glowing effect to enemies
         for (LivingEntity entity : nearbyEntities) {
-            entity.addStatusEffect(new MobEffectInstance(
+            entity.addEffect(new MobEffectInstance(
                     MobEffects.GLOWING,
                     40, // 2 seconds (refreshed each tick)
                     0,

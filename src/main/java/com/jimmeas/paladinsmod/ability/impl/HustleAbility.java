@@ -6,11 +6,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.server.level.ServerPlayer;
-
-import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 
 public class HustleAbility extends Ability {
-    private static final UUID SPEED_UUID = UUID.fromString("b9d8e3f4-7a6b-5c4d-3e2f-1a0b9c8d7e6f");
+    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath("paladinsmod", "hustle_speed");
     private static final int DURATION_TICKS = 40; // 2 seconds (20 ticks = 1 second)
 
     public HustleAbility() {
@@ -22,19 +21,18 @@ public class HustleAbility extends Ability {
         if (!canUse(player)) return false;
 
         // Apply speed boost
-        var modifier = new EntityAttributeModifier(
-                SPEED_UUID,
-                "hustle_speed",
+        var modifier = new AttributeModifier(
+                SPEED_ID,
                 0.5, // 50% speed increase
-                EntityAttributeModifier.Operation.MULTIPLY_TOTAL
+                AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
         );
 
-        player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                .addTemporaryModifier(modifier);
+        player.getAttribute(Attributes.MOVEMENT_SPEED)
+                .addTransientModifier(modifier);
 
         // Apply visual effect (Speed particles)
-        player.addStatusEffect(new MobEffectInstance(
-                MobEffects.SPEED,
+        player.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SPEED,
                 DURATION_TICKS,
                 0,
                 false,
@@ -53,8 +51,8 @@ public class HustleAbility extends Ability {
             try {
                 Thread.sleep(ticks * 50L); // 50ms per tick
                 if (player.isAlive()) {
-                    player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                            .removeModifier(SPEED_UUID);
+                    player.getAttribute(Attributes.MOVEMENT_SPEED)
+                            .removeModifier(SPEED_ID);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -65,7 +63,7 @@ public class HustleAbility extends Ability {
     @Override
     public void onUnequip(ServerPlayer player) {
         // Remove speed boost if character is switched
-        player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                .removeModifier(SPEED_UUID);
+        player.getAttribute(Attributes.MOVEMENT_SPEED)
+                .removeModifier(SPEED_ID);
     }
 }

@@ -27,7 +27,7 @@ public class CharacterData {
      * Get or create character data for a player
      */
     public static CharacterData get(ServerPlayer player) {
-        UUID uuid = player.getUuid();
+        UUID uuid = player.getUUID();
         return playerData.computeIfAbsent(uuid, k -> {
             CharacterData data = new CharacterData();
             // Load character from NBT if exists

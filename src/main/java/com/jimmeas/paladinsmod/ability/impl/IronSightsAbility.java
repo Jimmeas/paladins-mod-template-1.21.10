@@ -4,11 +4,10 @@ import com.jimmeas.paladinsmod.ability.Ability;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.server.level.ServerPlayer;
-
-import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
 
 public class IronSightsAbility extends Ability {
-    private static final UUID SLOWNESS_UUID = UUID.fromString("a8c79f2e-8f3a-4b2d-9c1e-5a6b7c8d9e0f");
+    private static final ResourceLocation SLOWNESS_ID = ResourceLocation.fromNamespaceAndPath("paladinsmod", "iron_sights_slowness");
     private boolean isActive = false;
 
     public IronSightsAbility() {
@@ -23,23 +22,22 @@ public class IronSightsAbility extends Ability {
 
         if (isActive) {
             // Apply slowness while aiming
-            var modifier = new EntityAttributeModifier(
-                    SLOWNESS_UUID,
-                    "iron_sights_slowness",
+            var modifier = new AttributeModifier(
+                    SLOWNESS_ID,
                     -0.3, // 30% slower
-                    EntityAttributeModifier.Operation.MULTIPLY_TOTAL
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
             );
 
-            player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                    .addTemporaryModifier(modifier);
+            player.getAttribute(Attributes.MOVEMENT_SPEED)
+                    .addTransientModifier(modifier);
 
             // TODO: Send packet to client to reduce FOV
             // This would need client-side handling to change FOV
 
         } else {
             // Remove slowness
-            player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                    .removeModifier(SLOWNESS_UUID);
+            player.getAttribute(Attributes.MOVEMENT_SPEED)
+                    .removeModifier(SLOWNESS_ID);
 
             // TODO: Send packet to client to restore FOV
         }
@@ -51,8 +49,8 @@ public class IronSightsAbility extends Ability {
     public void onUnequip(ServerPlayer player) {
         // Make sure to remove effect when switching characters
         if (isActive) {
-            player.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)
-                    .removeModifier(SLOWNESS_UUID);
+            player.getAttribute(Attributes.MOVEMENT_SPEED)
+                    .removeModifier(SLOWNESS_ID);
             isActive = false;
         }
     }

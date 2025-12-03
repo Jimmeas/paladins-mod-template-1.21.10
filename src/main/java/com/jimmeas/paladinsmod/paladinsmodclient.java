@@ -1,15 +1,11 @@
 package com.jimmeas.paladinsmod;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.network.FriendlyByteBuf;
 import org.lwjgl.glfw.GLFW;
 
 public class paladinsmodclient implements ClientModInitializer {
@@ -66,31 +62,10 @@ public class paladinsmodclient implements ClientModInitializer {
                 "category.paladinsmod.abilities"
         ));
 
-        // Register client tick event for key handling
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null) return;
-
-            // Check ability keys and send packets to server
-            if (ability1Key.consumeClick()) {
-                sendAbilityPacket(0);
-            }
-            if (ability2Key.consumeClick()) {
-                sendAbilityPacket(1);
-            }
-            if (ability3Key.consumeClick()) {
-                sendAbilityPacket(2);
-            }
-            if (ultimateKey.consumeClick()) {
-                sendAbilityPacket(3);
-            }
-        });
+        // Note: Key handling removed for now - packet system needs to be reimplemented
+        // for 1.21.1's new CustomPacketPayload system
 
         PaladinsMod.LOGGER.info("Paladins Mod Client initialized successfully!");
-    }
-
-    private static void sendAbilityPacket(int slot) {
-        FriendlyByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(slot);
-        ClientPlayNetworking.send(PaladinsMod.ABILITY_USE_PACKET, buf);
+        PaladinsMod.LOGGER.info("Note: Ability keybinds registered but not functional yet - packet system needs update");
     }
 }
