@@ -17,7 +17,7 @@ import java.util.List;
 public class GrenadeEntity extends ThrowableItemProjectile {
     private static final int FUSE_TIME = 60; // 3 seconds (20 ticks = 1 second)
     private static final float EXPLOSION_POWER = 3.0F;
-    private static final double DAMAGE_RADIUS = 5.0;
+    private static final double DAMAGE_RADIUS = 6.0;
 
     private int fuseTicks = FUSE_TIME;
 
@@ -72,6 +72,7 @@ public class GrenadeEntity extends ThrowableItemProjectile {
         if (this.level().isClientSide) return;
 
         // Create explosion effect (no terrain damage)
+        // Create explosion effect (no terrain damage)
         this.level().explode(
                 this,
                 this.getX(),
@@ -81,6 +82,55 @@ public class GrenadeEntity extends ThrowableItemProjectile {
                 false, // Don't break blocks
                 Level.ExplosionInteraction.NONE
         );
+
+// Add extra explosion particles for visual effect
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            // Large explosion particle burst
+            serverLevel.sendParticles(
+                    net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    3, // Multiple explosion particles
+                    0, 0, 0,
+                    0
+            );
+
+            // Smoke cloud
+            for (int i = 0; i < 50; i++) {
+                double offsetX = (Math.random() - 0.5) * 4;
+                double offsetY = (Math.random() - 0.5) * 4;
+                double offsetZ = (Math.random() - 0.5) * 4;
+
+                serverLevel.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                        this.getX() + offsetX,
+                        this.getY() + offsetY,
+                        this.getZ() + offsetZ,
+                        1,
+                        0, 0.1, 0,
+                        0.05
+                );
+            }
+
+            // Fire particles
+            for (int i = 0; i < 30; i++) {
+                double offsetX = (Math.random() - 0.5) * 3;
+                double offsetY = (Math.random() - 0.5) * 3;
+                double offsetZ = (Math.random() - 0.5) * 3;
+
+                serverLevel.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.FLAME,
+                        this.getX() + offsetX,
+                        this.getY() + offsetY,
+                        this.getZ() + offsetZ,
+                        1,
+                        0, 0.1, 0,
+                        0.05
+                );
+            }
+        }
+
 
         // Play explosion sound
         this.level().playSound(

@@ -22,6 +22,7 @@ public class PaladinsMod implements ModInitializer {
 
     // Items
     public static Item VICTOR_RIFLE;
+    public static Item FRAG_GRENADE;
 
     @Override
     public void onInitialize() {
@@ -44,6 +45,13 @@ public class PaladinsMod implements ModInitializer {
                 ResourceLocation.fromNamespaceAndPath(MOD_ID, "victor_rifle"),
                 new VictorRifleItem(new Item.Properties().stacksTo(1))
         );
+
+        FRAG_GRENADE = Registry.register(
+                BuiltInRegistries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(MOD_ID, "frag_grenade"),
+                new FragGrenadeItem(new Item.Properties().stacksTo(1))
+        );
+
 
         // Register characters
         CharacterRegistry.register();
