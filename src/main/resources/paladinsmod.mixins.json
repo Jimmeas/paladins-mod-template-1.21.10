@@ -3,8 +3,12 @@
 	"package": "com.jimmeas.paladinsmod.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+        "PlayerAttackMixin"
 	],
+    "client": [
+
+    ],
+
 	"injectors": {
 		"defaultRequire": 1
 	},

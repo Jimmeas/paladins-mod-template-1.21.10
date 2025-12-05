@@ -53,6 +53,8 @@ public class PaladinsMod implements ModInitializer {
         );
 
 
+
+
         // Register characters
         CharacterRegistry.register();
 

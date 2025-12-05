@@ -18,13 +18,19 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+
 public class VictorRifleItem extends Item {
+    private static final ResourceLocation IRON_SIGHTS_SLOWNESS_ID = ResourceLocation.fromNamespaceAndPath("paladinsmod", "iron_sights_slowness");
+    private static final Map<UUID, Boolean> isAiming = new HashMap<>();
     private static final int FIRE_RATE_COOLDOWN = 4; // 5 shots per second (4 ticks between shots) ****** (should be 10 shots persecond)
     private static final int RELOAD_COOLDOWN = 32; // 1.6 seconds (32 ticks)
     private static final int MAG_SIZE = 50;
@@ -32,11 +38,11 @@ public class VictorRifleItem extends Item {
     private static final double MAX_RANGE = 50.0;
 
     // Recoil/spread system
-    private static final float BASE_SPREAD = 0.5F;
+    private static final float BASE_SPREAD = 0.0F;
     private static final float MAX_SPREAD = 8.0F;
-    private static final float SPREAD_INCREASE_PER_SHOT = 1.0F;
-    private static final float SPREAD_RECOVERY_RATE = 0.3F;
-    private static final int RECOVERY_DELAY_TICKS = 10;
+    private static final float SPREAD_INCREASE_PER_SHOT = 0.5F;
+    private static final float SPREAD_RECOVERY_RATE = 2.5F;
+    private static final int RECOVERY_DELAY_TICKS = 5;
 
     // Track each player's state
     private static final Map<UUID, Float> playerSpread = new HashMap<>();
@@ -74,8 +80,9 @@ public class VictorRifleItem extends Item {
                 return InteractionResultHolder.pass(itemStack);
             }
 
-            // Get current spread
-            float currentSpread = playerSpread.getOrDefault(playerUUID, BASE_SPREAD);
+            // Get current spread - if aiming, use very low spread
+            boolean isPlayerAiming = isAiming.getOrDefault(playerUUID, false);
+            float currentSpread = isPlayerAiming ? 0.1F : playerSpread.getOrDefault(playerUUID, BASE_SPREAD);
 
             // Get shoot direction with spread
             Vec3 startPos = player.getEyePosition();
@@ -136,9 +143,13 @@ public class VictorRifleItem extends Item {
                 // Store knockback to restore it after
                 Vec3 originalDeltaMovement = hitEntity.getDeltaMovement();
 
-                // Apply damage
+                // Apply damage with drop-off
+                float distanceToTarget = (float) player.distanceTo(hitEntity);
+                float damageMultiplier = calculateDamageDropoff(distanceToTarget);
+                float finalDamageWithDropoff = finalDamage * damageMultiplier;
+
                 DamageSource damageSource = world.damageSources().playerAttack(player);
-                hitEntity.hurt(damageSource, finalDamage);
+                hitEntity.hurt(damageSource, finalDamageWithDropoff);
 
                 // Remove knockback by restoring original velocity
                 hitEntity.setDeltaMovement(originalDeltaMovement);
@@ -200,6 +211,10 @@ public class VictorRifleItem extends Item {
         }
 
         return InteractionResultHolder.pass(itemStack);
+    }
+
+    public static boolean isPlayerAiming(UUID playerUUID) {
+        return isAiming.getOrDefault(playerUUID, false);
     }
 
     private void startReload(Player player, UUID playerUUID) {
@@ -344,5 +359,72 @@ public class VictorRifleItem extends Item {
 
         // Consider top 25% of entity as "head"
         return relativeHeight >= entityHeight * 0.75;
+    }
+
+
+// Call this every tick to check the crouch state
+    public static void handleIronSights(Player player) {
+        UUID playerUUID = player.getUUID();
+        boolean isCrouching = player.isCrouching();
+        boolean wasAiming = isAiming.getOrDefault(playerUUID, false);
+
+        // Check if player is holding Victor's rifle
+        ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (heldItem.getItem() != PaladinsMod.VICTOR_RIFLE) {
+            // Not holding rifle, remove iron sights if active
+            if (wasAiming) {
+                player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(IRON_SIGHTS_SLOWNESS_ID);
+                isAiming.put(playerUUID, false);
+            }
+            return;
+        }
+
+        // Can't aim while sprinting or reloading
+        boolean isReloading = player.getCooldowns().isOnCooldown(PaladinsMod.VICTOR_RIFLE);
+        boolean isSprinting = player.isSprinting();
+
+        if (isReloading || isSprinting) {
+            if (wasAiming) {
+                // Cancel iron sights
+                player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(IRON_SIGHTS_SLOWNESS_ID);
+                isAiming.put(playerUUID, false);
+            }
+            return;
+        }
+
+        if (isCrouching && !wasAiming) {
+            // Start aiming
+            var modifier = new AttributeModifier(
+                    IRON_SIGHTS_SLOWNESS_ID,
+                    -0.3, // 30% slower
+                    AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+            );
+
+            player.getAttribute(Attributes.MOVEMENT_SPEED).addTransientModifier(modifier);
+            isAiming.put(playerUUID, true);
+
+            // Dramatically reduce spread when aiming (almost perfect accuracy)
+            playerSpread.put(playerUUID, 0.1F); // Nearly perfect aim
+
+        } else if (!isCrouching && wasAiming) {
+            // Stop aiming
+            player.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(IRON_SIGHTS_SLOWNESS_ID);
+            isAiming.put(playerUUID, false);
+        }
+    }
+
+    private float calculateDamageDropoff(float distance) {
+        // Full damage up to 15 blocks
+        if (distance <= 15.0F) {
+            return 1.0F;
+        }
+        // 50% damage at 50 blocks
+        else if (distance >= 50.0F) {
+            return 0.5F;
+        }
+        // Linear interpolation between 15 and 50 blocks
+        else {
+            return 1.0F - ((distance - 15.0F) / 35.0F) * 0.5F;
+        }
     }
 }
