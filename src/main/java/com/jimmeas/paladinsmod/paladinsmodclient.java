@@ -15,6 +15,7 @@ public class paladinsmodclient implements ClientModInitializer {
     public static KeyMapping ability3Key;
     public static KeyMapping ultimateKey;
     public static KeyMapping characterMenuKey;
+    public static KeyMapping reloadKey;
 
     @Override
     public void onInitializeClient() {
@@ -25,12 +26,12 @@ public class paladinsmodclient implements ClientModInitializer {
                 PaladinsMod.GRENADE_ENTITY,
                 (context) -> new ThrownItemRenderer<>(context)
         );
-
+/*
         // Register key bindings
         ability1Key = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.paladinsmod.ability1",
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_Q,
+                GLFW.GLFW_KEY_T,
                 "category.paladinsmod.abilities"
         ));
 
@@ -51,7 +52,7 @@ public class paladinsmodclient implements ClientModInitializer {
         ultimateKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.paladinsmod.ultimate",
                 InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_R,
+                GLFW.GLFW_KEY_Q,
                 "category.paladinsmod.abilities"
         ));
 
@@ -62,6 +63,13 @@ public class paladinsmodclient implements ClientModInitializer {
                 "category.paladinsmod.abilities"
         ));
 
+        reloadKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.paladinsmod.menu",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_R,
+                "category.paladinsmod.abilities"
+        ));
+*/
         // Note: Key handling removed for now - packet system needs to be reimplemented
         // for 1.21.1's new CustomPacketPayload system
 

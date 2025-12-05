@@ -166,6 +166,11 @@ public class GrenadeEntity extends ThrowableItemProjectile {
 
             if (damage > 0) {
                 entity.hurt(this.damageSources().explosion(this, this.getOwner() instanceof LivingEntity ? (LivingEntity) this.getOwner() : null), damage);
+
+                // Add ult charge to owner
+                if (this.getOwner() instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                    com.jimmeas.paladinsmod.ability.impl.TacticalVisorAbility.addUltCharge(serverPlayer, damage);
+                }
             }
         }
 

@@ -2,6 +2,7 @@ package com.jimmeas.paladinsmod;
 
 import com.jimmeas.paladinsmod.entity.GrenadeEntity;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -23,6 +24,7 @@ public class PaladinsMod implements ModInitializer {
     // Items
     public static Item VICTOR_RIFLE;
     public static Item FRAG_GRENADE;
+    public static Item TACTICAL_VISOR;
 
     @Override
     public void onInitialize() {
@@ -52,8 +54,25 @@ public class PaladinsMod implements ModInitializer {
                 new FragGrenadeItem(new Item.Properties().stacksTo(1))
         );
 
+        TACTICAL_VISOR = Registry.register(
+                BuiltInRegistries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(MOD_ID, "tactical_visor"),
+                new TacticalVisorItem(new Item.Properties().stacksTo(1))
+        );
 
+        // Register tick handler for weapon spread recovery
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            VictorRifleItem.tick(server.overworld());
 
+            // Update XP bars for all players with Victor
+            for (var player : server.getPlayerList().getPlayers()) {
+                // Update XP bar if holding Victor items
+                if (player.getMainHandItem().getItem() == VICTOR_RIFLE ||
+                        player.getMainHandItem().getItem() == TACTICAL_VISOR) {
+                    com.jimmeas.paladinsmod.ability.impl.TacticalVisorAbility.updateXPBarIfNeeded(player);
+                }
+            }
+        });
 
         // Register characters
         CharacterRegistry.register();

@@ -2,6 +2,7 @@ package com.jimmeas.paladinsmod;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -29,8 +30,6 @@ import java.util.UUID;
 
 
 public class VictorRifleItem extends Item {
-    private static final ResourceLocation IRON_SIGHTS_SLOWNESS_ID = ResourceLocation.fromNamespaceAndPath("paladinsmod", "iron_sights_slowness");
-    private static final Map<UUID, Boolean> isAiming = new HashMap<>();
     private static final int FIRE_RATE_COOLDOWN = 4; // 5 shots per second (4 ticks between shots) ****** (should be 10 shots persecond)
     private static final int RELOAD_COOLDOWN = 32; // 1.6 seconds (32 ticks)
     private static final int MAG_SIZE = 50;
@@ -61,6 +60,12 @@ public class VictorRifleItem extends Item {
         if (!world.isClientSide && world instanceof ServerLevel serverWorld) {
             UUID playerUUID = player.getUUID();
 
+            // Can't shoot while sprinting
+            while (player.isSprinting()) {
+                player.setSprinting(false); // Cancel sprint
+                return InteractionResultHolder.pass(itemStack);
+            }
+
             // Initialize ammo if not set
             if (!playerAmmo.containsKey(playerUUID)) {
                 playerAmmo.put(playerUUID, MAG_SIZE);
@@ -80,8 +85,8 @@ public class VictorRifleItem extends Item {
                 return InteractionResultHolder.pass(itemStack);
             }
 
-            // Get current spread - if aiming, use very low spread
-            boolean isPlayerAiming = isAiming.getOrDefault(playerUUID, false);
+            // Get current spread - if aiming (iron sights), use very low spread
+            boolean isPlayerAiming = com.jimmeas.paladinsmod.ability.impl.IronSightsAbility.isPlayerAiming(playerUUID);
             float currentSpread = isPlayerAiming ? 0.1F : playerSpread.getOrDefault(playerUUID, BASE_SPREAD);
 
             // Get shoot direction with spread
@@ -151,6 +156,12 @@ public class VictorRifleItem extends Item {
                 DamageSource damageSource = world.damageSources().playerAttack(player);
                 hitEntity.hurt(damageSource, finalDamageWithDropoff);
 
+                // Add ult charge
+                com.jimmeas.paladinsmod.ability.impl.TacticalVisorAbility.addUltCharge(
+                        (ServerPlayer) player,
+                        finalDamageWithDropoff
+                );
+
                 // Remove knockback by restoring original velocity
                 hitEntity.setDeltaMovement(originalDeltaMovement);
 
@@ -174,6 +185,7 @@ public class VictorRifleItem extends Item {
                     );
                 }
             }
+
 
             // Spawn particle trail (skip first 2 blocks to not obscure vision)
             spawnBulletTrail(serverWorld, startPos, actualEndPos);
@@ -204,8 +216,10 @@ public class VictorRifleItem extends Item {
             playerSpread.put(playerUUID, newSpread);
             lastShotTime.put(playerUUID, world.getGameTime());
 
-            // Set cooldown
-            player.getCooldowns().addCooldown(this, FIRE_RATE_COOLDOWN);
+            // Set cooldown (reduced during ult)
+            float fireRateMultiplier = com.jimmeas.paladinsmod.ability.impl.TacticalVisorAbility.getFireRateMultiplier(playerUUID);
+            int adjustedCooldown = Math.max(1, (int)(FIRE_RATE_COOLDOWN / fireRateMultiplier));
+            player.getCooldowns().addCooldown(this, adjustedCooldown);
 
             return InteractionResultHolder.success(itemStack);
         }
@@ -213,9 +227,9 @@ public class VictorRifleItem extends Item {
         return InteractionResultHolder.pass(itemStack);
     }
 
-    public static boolean isPlayerAiming(UUID playerUUID) {
-        return isAiming.getOrDefault(playerUUID, false);
-    }
+    //public static boolean isPlayerAiming(UUID playerUUID) {
+        //return isAiming.getOrDefault(playerUUID, false);
+    //}
 
     private void startReload(Player player, UUID playerUUID) {
         isReloading.put(playerUUID, true);
@@ -361,7 +375,7 @@ public class VictorRifleItem extends Item {
         return relativeHeight >= entityHeight * 0.75;
     }
 
-
+/*
 // Call this every tick to check the crouch state
     public static void handleIronSights(Player player) {
         UUID playerUUID = player.getUUID();
@@ -412,6 +426,7 @@ public class VictorRifleItem extends Item {
             isAiming.put(playerUUID, false);
         }
     }
+    */
 
     private float calculateDamageDropoff(float distance) {
         // Full damage up to 15 blocks
